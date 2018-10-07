@@ -10,8 +10,25 @@ from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 
 from vtk.util.vtkConstants import *
 
-class dicomShow():
+class dicomWidget(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
+        QtWidgets.QMainWindow.__init__(self, parent)
+        self.frame = QtWidgets.QFrame()
+
+        self.vl = QtWidgets.QVBoxLayout()
+        self.vtkWidget = QVTKRenderWindowInteractor(self.frame)
+        self.vl.addWidget(self.vtkWidget)
+
+        self.ren = vtk.vtkRenderer()
+        # self.renWin = vtk.vtkRenderWindow()
+        # self.renWin.AddRenderer(self.ren)
+        # self.renWin.SetSize(600, 600)
+        self.renWin = self.vtkWidget.GetRenderWindow()
+        self.renWin.AddRenderer(self.ren)
+        self.renWin.SetSize(600, 600)
+        # self.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
+        self.iren = self.renWin.GetInteractor()
+
         self.reader = sitk.ImageSeriesReader()
         self.dicom_names = self.reader.GetGDCMSeriesFileNames('P01dicom')
         self.reader.SetFileNames(self.dicom_names)
@@ -19,6 +36,26 @@ class dicomShow():
         self.information = self.getInformation()
 
         self.data = sitk.GetArrayFromImage(self.image)  # z, y, x
+
+        q = mquantiles(self.data.flatten(), [0.7, 0.98])
+        q[0] = max(q[0], 1)
+        q[1] = max(q[1], 1)
+        tf = [[0, 0, 0, 0, 0], [q[0], 0, 0, 0, 0], [q[1], 1, 1, 1, 0.5], [self.data.max(), 1, 1, 1, 1]]
+
+        actor_list = self.volumeRender(self.data, tf, self.image.GetSpacing())
+
+        for a in actor_list:
+            # assign actor to the renderer
+            self.ren.AddActor(a)
+
+        self.renWin.Render()
+
+        self.frame.setLayout(self.vl)
+        self.setCentralWidget(self.frame)
+
+        self.show()
+        self.iren.Initialize()
+
 
     def getInformation(self):
         information = {}
@@ -45,21 +82,11 @@ class dicomShow():
     def getdate(self):
         return self.information['StudyDate']
 
-    def Show(self):
-        q = mquantiles(self.data.flatten(), [0.7, 0.98])
-        q[0] = max(q[0], 1)
-        q[1] = max(q[1], 1)
-        tf = [[0, 0, 0, 0, 0], [q[0], 0, 0, 0, 0], [q[1], 1, 1, 1, 0.5], [self.data.max(), 1, 1, 1, 1]]
-
-        actor_list = self.volumeRender(self.data, tf, self.image.GetSpacing())
-
-        self.vtk_basic(actor_list)
-
     def numpy2VTK(self, img, spacing=[1.0, 1.0, 1.0]):
         importer = vtk.vtkImageImport()
-        img_data = self.astype('uint8')
+        img_data = img.astype('uint8')
         img_string = img_data.tostring()  # type short
-        dim = self.shape
+        dim = img.shape
 
         importer.CopyImportVoidPointer(img_string, len(img_string))
         importer.SetDataScalarType(VTK_UNSIGNED_CHAR)
@@ -79,7 +106,7 @@ class dicomShow():
         return importer
 
     def volumeRender(self, img, tf=[], spacing=[1.0, 1.0, 1.0]):
-        importer = dicomShow.numpy2VTK(img, spacing)
+        importer = self.numpy2VTK(img, spacing)
 
         # Transfer Functions
         opacity_tf = vtk.vtkPiecewiseFunction()
@@ -110,30 +137,10 @@ class dicomShow():
 
         return [vol]
 
-    def vtk_basic(self, actors):
-        # create a rendering window and renderer
-        ren = vtk.vtkRenderer()
-        renWin = vtk.vtkRenderWindow()
-        renWin.AddRenderer(ren)
-        renWin.SetSize(600, 600)
-        # ren.SetBackground( 1, 1, 1)
 
-        # create a renderwindowinteractor
-        iren = vtk.vtkRenderWindowInteractor()
-        iren.SetRenderWindow(renWin)
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
 
-        for a in actors:
-            # assign actor to the renderer
-            ren.AddActor(a)
+    window = dicomWidget()
 
-        # render
-        renWin.Render()
-
-        # enable user interface interactor
-        iren.Initialize()
-        iren.Start()
-
-
-if __name__ == '__main__':
-    dicomS = dicomShow()
-    dicomS.Show()
+    sys.exit(app.exec_())

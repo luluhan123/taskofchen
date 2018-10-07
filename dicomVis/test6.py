@@ -6,8 +6,6 @@ from vtk.util.vtkConstants import *
 
 
 def numpy2VTK(img, spacing=[1.0, 1.0, 1.0]):
-    # evolved from code from Stou S.,
-    # on http://www.siafoo.net/snippet/314
     importer = vtk.vtkImageImport()
 
     img_data = img.astype('uint8')
@@ -58,24 +56,6 @@ def volumeRender(img, tf=[], spacing=[1.0, 1.0, 1.0]):
     volProperty.ShadeOn()
     volProperty.SetInterpolationTypeToLinear()
 
-    # working on the CPU
-    # volMapper = vtk.vtkVolumeRayCastMapper()
-    # compositeFunction = vtk.vtkVolumeRayCastCompositeFunction()
-    # compositeFunction.SetCompositeMethodToInterpolateFirst()
-    # volMapper.SetVolumeRayCastFunction(compositeFunction)
-    # volMapper.SetInputConnection(importer.GetOutputPort())
-    #
-    # # The property describes how the data will look
-    # volProperty = vtk.vtkVolumeProperty()
-    # volProperty.SetColor(color_tf)
-    # volProperty.SetScalarOpacity(opacity_tf)
-    # volProperty.ShadeOn()
-    # volProperty.SetInterpolationTypeToLinear()
-
-    # Do the lines below speed things up?
-    # pix_diag = 5.0
-    # volMapper.SetSampleDistance(pix_diag / 5.0)
-    # volProperty.SetScalarOpacityUnitDistance(pix_diag)
 
     vol = vtk.vtkVolume()
     vol.SetMapper(volMapper)
@@ -85,18 +65,6 @@ def volumeRender(img, tf=[], spacing=[1.0, 1.0, 1.0]):
 
 
 def vtk_basic(actors):
-    """
-    Create a window, renderer, interactor, add the actors and start the thing
-
-    Parameters
-    ----------
-    actors :  list of vtkActors
-
-    Returns
-    -------
-    nothing
-    """
-
     # create a rendering window and renderer
     ren = vtk.vtkRenderer()
     renWin = vtk.vtkRenderWindow()
