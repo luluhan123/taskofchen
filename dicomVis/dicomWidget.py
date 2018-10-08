@@ -142,5 +142,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     window = dicomWidget()
+    print(window.getInformation())
 
     sys.exit(app.exec_())
