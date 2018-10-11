@@ -14,7 +14,7 @@ class myVtkInteractorStyleImage(vtk.vtkInteractorStyleImage):
         self._ImageViewer = imageViewer
         self._MinSlice = imageViewer.GetSliceMin()
         self._MaxSlice = imageViewer.GetSliceMax()
-        self._Slice = self._MinSlice;
+        self._Slice = self._MinSlice
         print("Slicer: Min = ",self._MinSlice,", Max = ",self._MaxSlice)
 
     def SetStatusMapper(self,statusMapper):
@@ -54,22 +54,45 @@ class myVtkInteractorStyleImage(vtk.vtkInteractorStyleImage):
         if self._Slice > self._MinSlice:
             self.MoveSliceBackward()
 
+def DummyFunc1(obj, ev):
+    print("Before Event")
+
+
+def DummyFunc2(obj, ev):
+    print("After Event")
 
 reader = vtk.vtkDICOMImageReader()
 reader.SetDirectoryName('P01dicom')
 reader.Update()
 
-imageViewer = vtk.vtkImageViewer2()
-imageViewer.SetInputConnection(reader.GetOutputPort())
+# imageViewer = vtk.vtkImageViewer2()
+# imageViewer.SetInputConnection(reader.GetOutputPort())
+
+mapper = vtk.vtkPolyDataMapper()
+mapper.SetInputConnection(reader.GetOutputPort())
+
+actor = vtk.vtkActor()
+actor.SetMapper(mapper)
+
+renderer = vtk.vtkRenderer()
+renderer.SetBackground(1, 1, 1)
+renderer.AddActor(actor)
+
+renwin = vtk.vtkRenderWindow()
+renwin.AddRenderer(renderer)
 
 renderWindowInteractor = vtk.vtkRenderWindowInteractor()
-myInteractorStyle = myVtkInteractorStyleImage()
-myInteractorStyle.SetImageViewer(imageViewer)
+renderWindowInteractor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
+renderWindowInteractor.SetRenderWindow(renwin)
 
-imageViewer.SetupInteractor(renderWindowInteractor)
-renderWindowInteractor.SetInteractorStyle(myInteractorStyle)
+renderWindowInteractor.RemoveObservers('MouseWheelForwardEvent')
+renderWindowInteractor.RemoveObservers('MouseWheelBackwardEvent')
+renderWindowInteractor.AddObserver('MouseWheelForwardEvent', DummyFunc1, 1.0)
+renderWindowInteractor.AddObserver('MouseWheelBackwardEvent', DummyFunc2, -1.0)
+renderWindowInteractor.Initialize()
 
-imageViewer.Render()
-imageViewer.GetRenderer().ResetCamera()
-imageViewer.Render()
+
+# imageViewer.Render()
+# imageViewer.GetRenderer().ResetCamera()
+# imageViewer.Render()
 renderWindowInteractor.Start()
