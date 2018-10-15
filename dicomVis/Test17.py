@@ -1,6 +1,6 @@
-import vtk
+from vtk import *
 
-class myVtkInteractorStyleImage(vtk.vtkInteractorStyleImage):
+class myVtkInteractorStyleImage(vtkInteractorStyleImage):
     def __init__(self):
         pass
 
@@ -29,7 +29,6 @@ class myVtkInteractorStyleImage(vtk.vtkInteractorStyleImage):
             self._ImageViewer.Render()
 
     def OnKeyDown(self):
-        print(self.GetInteractor())
         key = self.GetInteraction().GetKeySym()
         if key.compare("Up") == 0:
             self.MoveSliceForward()
@@ -48,51 +47,46 @@ def DummyFunc1(obj, ev):
     obj.GetInteractorStyle().MoveSliceBackward()
     print("Before Event")
 
+
 def DummyFunc2(obj, ev):
     obj.GetInteractorStyle().MoveSliceForward()
     print("After Event")
 
 def DummyFunc3(obj, ev):
     obj.GetInteractorStyle().OnKeyDown()
+    print(ev)
     print("KeyPress")
 
 reader = vtk.vtkDICOMImageReader()
 reader.SetDirectoryName('P01dicom')
 reader.Update()
 
-imageViewer = vtk.vtkImageViewer2()
-imageViewer.SetInputConnection(reader.GetOutputPort())
+actor = vtkImageActor()
+actor.SetInputData(reader.GetOutput())
+print(actor)
 
-# sliceTextProp = vtk.vtkTextProperty()
-# sliceTextProp.SetFontFamilyToCourier()
-# sliceTextProp.SetFontSize(20)
-# sliceTextProp.SetVerticalJustificationToBottom()
-# sliceTextProp.SetJustificationToLeft()
-#
-# sliceTextMapper = vtk.vtkTextMapper()
-# msg = "Slice Number :" + str(imageViewer.GetSliceMin())+"/"+ str(imageViewer.GetSliceMax())
-# sliceTextMapper.SetInput(msg)
-# sliceTextMapper.SetTextProperty(sliceTextProp)
-#
-# sliceTextActor = vtk.vtkActor2D()
-# sliceTextActor.SetMapper(sliceTextMapper)
-# sliceTextActor.SetPosition(15,10)
+render = vtkRenderer()
+render.AddActor(actor)
+render.ResetCamera()
+render.SetBackground(1,1,1)
 
-renderWindowInteractor = vtk.vtkRenderWindowInteractor()
-myInteractorStyle = myVtkInteractorStyleImage()
-myInteractorStyle.SetImageViewer(imageViewer)
+window = vtkRenderWindow()
+window.AddRenderer(render)
+# window.SetSize(640,480)
+window.SetWindowName("ImageViewer3D")
+window.Render()
 
+rwi = vtkRenderWindowInteractor()
+style = myVtkInteractorStyleImage()
+rwi.SetInteractorStyle(style)
 
-imageViewer.SetupInteractor(renderWindowInteractor)
-renderWindowInteractor.SetInteractorStyle(myInteractorStyle)
-renderWindowInteractor.RemoveObservers('MouseWheelForwardEvent')
-renderWindowInteractor.RemoveObservers('MouseWheelBackwardEvent')
-#renderWindowInteractor.RemoveObservers('KeyPressEvent')
-renderWindowInteractor.AddObserver('MouseWheelForwardEvent', DummyFunc1, 1.0)
-renderWindowInteractor.AddObserver('MouseWheelBackwardEvent', DummyFunc2, 1.0)
-#renderWindowInteractor.AddObserver('KeyPressEvent', DummyFunc3, 1.0)
+rwi.RemoveObservers('MouseWheelForwardEvent')
+rwi.RemoveObservers('MouseWheelBackwardEvent')
+rwi.RemoveObservers('KeyPressEvent')
+rwi.AddObserver('MouseWheelForwardEvent', DummyFunc1, 1.0)
+rwi.AddObserver('MouseWheelBackwardEvent', DummyFunc2, 1.0)
+rwi.AddObserver('KeyPressEvent', DummyFunc3, 1.0)
 
-imageViewer.Render()
-imageViewer.GetRenderer().ResetCamera()
-imageViewer.Render()
-renderWindowInteractor.Start()
+rwi.SetRenderWindow(window)
+rwi.Initialize()
+rwi.Start()
