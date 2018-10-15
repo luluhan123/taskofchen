@@ -1,8 +1,6 @@
 import SimpleITK as sitk
 import vtk
 import pydicom
-import sys
-from PyQt5.QtWidgets import QApplication
 from scipy.stats.mstats import mquantiles
 
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -34,10 +32,17 @@ class dicomWidget(QtWidgets.QMainWindow):
 
     def ReadandShow(self):
         self.reader = sitk.ImageSeriesReader()
+
+        TReader = sitk.ImageFileReader()
+        TReader.SetFileName("SMIR.Brain.XX.O.MR_DWI.339275.nii")
+
+
         self.dicom_names = self.reader.GetGDCMSeriesFileNames(self.path)
         self.reader.SetFileNames(self.dicom_names)
         self.image = self.reader.Execute()
         self.information = self.getInformation()
+
+        self.image = TReader.Execute()
 
         self.data = sitk.GetArrayFromImage(self.image)  # z, y, x
 
